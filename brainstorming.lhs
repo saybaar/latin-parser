@@ -38,8 +38,29 @@ distinguished by whether they have a subject/object/indirect object. Need better
 names for that.
 
 Maybe Verbs carry a 3-tuple for subject/object/DO, each a Maybe NounPhrase?
+Would need an implicit/default subject.
+Tuple elements would also be functions...I think? Is a nominative NounPhrase
+ever a function? 
 
 We only need to carry matching-relevant information, so may drop (?) info on
-genitive modifiers to NounPhrases and similar. A NounPhrase will only have a single
-set of Noun information. 
+genitive modifiers to NounPhrases, adverb modifiers to Verbs, etc. 
+
+
+AccNounPhrase :: Verb (without DO) -> Verb (with DO)
+               | Prep -> PrepPhrase
+
+AccAdj :: AccNounPhrase -> AccNounPhrase
+        | AccNounPhrase (adjective as noun)
+
+GenNounPhrase :: NounPhrase -> NounPhrase (any)
+
+ut :: SubjVerbPhrase -> PurposeClause (both carrying some noun information)
+
+what about "et"? Troublesome because it can combine pretty much anything of the
+same type...
+
+et :: NounPhrase -> NounPhrase -> NounPhrase pl
+    | Verb -> Verb -> Verb (either before or after subj/obj assignments:
+                              "(Marcus sedet) et (Sextus currit)"
+                              "Marcus (sedet et scribit)")
 
