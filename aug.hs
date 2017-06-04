@@ -23,12 +23,14 @@ import Data.List(transpose)
 
 -- Types and Trees: -----------------------------------------------------------
 
-data Type = T | S | O Type Type   deriving Eq
+data Gender = M | F | N                         deriving (Eq, Show, Enum)
+data Type   = T | S | Noun Gender | O Type Type deriving Eq
 
 instance Show Type where
   showsPrec d T       = showString "T"
   showsPrec d S       = showString "S"
   showsPrec d (O x y) = showString "O" . shows x . shows y
+  showsPrec d (Noun x) = showString "Noun" . shows x
 
 type TTree = (Tree,[Type]) 
 data Tree  = Atom String | FAp TTree TTree | BAp TTree TTree
@@ -43,11 +45,6 @@ type Sentence = [TTree]
 sentence :: String -> Sentence
 sentence = map wordToTTree . words
  where wordToTTree w = (Atom w, wordTypes w)
-
-myfriend  = "my friend lives in Boston"
-oldfriend = "my old friend who comes from Portland"
-long      = "my old friend who comes from Portland thinks that\
-           \ the film which he saw today was very interesting"
 
 -- Enumerating Types/Trees: ---------------------------------------------------
 
@@ -197,8 +194,17 @@ adverb      = ["home", "late", "early", "soundly", "quickly"]
 miscwords   = [("that", ost), ("in", otd1), ("tomorrow", oss),
                ("will", d2), ("down", d2), ("was", oap1),
                ("very", oaa), ("today", d1), ("who", otop1t),
-               ("from", otd1), ("which", otop1a), ("is", oap1)]
+               ("from", otd1), ("which", otop1a), ("is", oap1),
+               ("puella", nounf), ("puer", nounm), ("bona", adjf),
+               ("ind", adji), ("bonus", adjm)]
 
+-- Translate web results into word parses (to be displayed), then word
+-- parses into lists of these types
+
+adj x       = O (Noun x) (Noun x)
+nounMod     = [ O (Noun x) (Noun x) | x <- enumFrom M ]
+nounf       = Noun F
+nounm       = Noun M
 oss         = O S S
 ost         = O S T
 a           = O T T
