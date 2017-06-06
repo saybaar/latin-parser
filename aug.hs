@@ -20,20 +20,12 @@ module AUG where
 
 --import Prelude hiding(Word)  -- uncomment this line for use in GHCi
 import Data.List(transpose)
+import LatinTypes
 
--- Types and Trees: -----------------------------------------------------------
-
-data Gender = M | F | N                         deriving (Eq, Show, Enum)
-data Type   = T | S | Noun Gender | O Type Type deriving Eq
-
-instance Show Type where
-  showsPrec d T       = showString "T"
-  showsPrec d S       = showString "S"
-  showsPrec d (O x y) = showString "O" . shows x . shows y
-  showsPrec d (Noun x) = showString "Noun" . shows x
+-- Trees: -----------------------------------------------------------
 
 type TTree = (Tree,[Type]) 
-data Tree  = Atom String | FAp TTree TTree | BAp TTree TTree
+data Tree  = TreeAtom String | FAp TTree TTree | BAp TTree TTree
 
 tree          :: TTree -> Tree 
 tree (tr, ty)  = tr
@@ -44,7 +36,7 @@ type Sentence = [TTree]
 
 sentence :: String -> Sentence
 sentence = map wordToTTree . words
- where wordToTTree w = (Atom w, wordTypes w)
+ where wordToTTree w = (TreeAtom w, wordTypes w)
 
 -- Enumerating Types/Trees: ---------------------------------------------------
 
@@ -70,7 +62,7 @@ combine l r   = app FAp l r ++ app BAp r l
 
 app          :: (TTree -> TTree -> Tree) -> TTree -> TTree -> [TTree]
 app op (a,ts) (b,ss)
-              = [ (op (a,[O x y]) (b,[x]), [y]) | (O x y)<-ts, z<-ss, x==z ]
+              = [ (op (a,[O x y w]) (b,[x]), [y]) | (O x y w)<-ts, z<-ss, x==z ]
 
 -- A More Sophisticated Algorithm: --------------------------------------------
 
@@ -102,7 +94,7 @@ drawTTree    :: TTree -> String
 drawTTree tr  = unlines ((show (tree tr) ++ ":\n") : ptr)
  where (_,_,_,ptr)   = tpic tr
        tpic (tr,ty)  = oneAbove (pic tr) (label (show ty))
-       pic (Atom w)  = label w
+       pic (TreeAtom w)  = label w
        pic (FAp l r) = sideBySide (tpic l) (tpic r)
        pic (BAp l r) = sideBySide (tpic r) (tpic l)
  
@@ -134,114 +126,17 @@ addMargins l r = map (\s -> lm ++ s ++ rm)
  where lm = replicate l ' '
        rm = replicate r ' '
 
--- A simple lexicon, sufficient for examples in the paper: --------------------
-
-wordTypes  :: Word -> [Type]
-wordTypes w = findWord w dictionary
-
-data Dictionary = Nil | Node Word [Type] Dictionary Dictionary
-type Word       = String
-
-instance Show Dictionary where
-   showsPrec d Nil = id
-   showsPrec d (Node w ts l r)
-     = shows l .
-       showString w . showString " :: " . shows ts . showChar '\n' .
-       shows r
-
-addWord         :: Type -> Word -> Dictionary -> Dictionary
-addWord t w Nil  = Node w [t] Nil Nil
-addWord t w (Node v ts l r)
-        | w == v = Node v (t:ts) l r
-        | w <  v = Node v ts (addWord t w l) r
-        | w >  v = Node v ts l (addWord t w r)
-
-findWord        :: Word -> Dictionary -> [Type]
-findWord w Nil   = []
-findWord w (Node v ts l r) 
-        | w == v = ts
-        | w <  v = findWord w l
-        | w >  v = findWord w r
-
-vocab       :: [Word] -> Type -> Dictionary -> Dictionary
-vocab vs t d = foldr (addWord t) d vs
-
-other      :: [(Word,Type)] -> Dictionary -> Dictionary
-other wts d = foldr ($) d [ addWord t w | (w,t) <- wts ]
-
-dictionary :: Dictionary 
-dictionary  = vocab nouns   T
-            $ vocab itverb  (O T S)
-            $ vocab trverb  (O T (O T S))
-            $ vocab adj     (O T T)
-            $ vocab adverb  (O (O T S) (O T S))
-            $ other miscwords
-            $ Nil
-
-nouns       = ["Roman", "hat", "wine", "boy", "girl", "father", "mother",
-                "Boston", "I", "friend", "word", "home", "he", "she", "enemy",
-                "Moscow", "London", "Oregon", "film", "John", "dog", "Mary",
-                "Portland", "city", "cat", "mouse", "Sebastian", "Paul",
-                "Mark", "computer", "weather"]
-itverb      = ["came", "lives", "comes", "saw", "slept", "runs"]
-trverb      = ["knew", "see", "knocked", "thinks", "was", "likes", "loves" ]
-adj         = ["Roman", "the", "my", "his", "her", "old", "ill", "a", "young",
-               "exciting", "interesting", "this", "small", "favorite",
-               "red", "blue", "brown", "yellow", "green",
-               "sunny", "rainy", "windy", "warm" ]
-adverb      = ["home", "late", "early", "soundly", "quickly"]
-
-miscwords   = [("that", ost), ("in", otd1), ("tomorrow", oss),
-               ("will", d2), ("down", d2), ("was", oap1),
-               ("very", oaa), ("today", d1), ("who", otop1t),
-               ("from", otd1), ("which", otop1a), ("is", oap1),
-               ("puella", nounf), ("puer", nounm), ("bona", adjf),
-               ("ind", adji), ("bonus", adjm)]
-
--- Translate web results into word parses (to be displayed), then word
--- parses into lists of these types
-
-adj x       = O (Noun x) (Noun x)
-nounMod     = [ O (Noun x) (Noun x) | x <- enumFrom M ]
-nounf       = Noun F
-nounm       = Noun M
-oss         = O S S
-ost         = O S T
-a           = O T T
-p1          = O T S
-p2          = O T p1
-p3          = O T p2
-d1          = O p1 p1
-d2          = O p2 p2
-otd1        = O T d1
-oaa         = O a a
-otop1t      = O T (O p1 T)
-oap1        = O a p1
-otop1a      = O T (O p1 a)
-
-test1       = "the boy came home late"
-test2       = "my friend lives in Boston"
-test3       = "tomorrow I will see my old friend"
-test4       = "he knew that his mother was ill"
-test5       = "he knocked down his enemy"
-test6       = "the film was very interesting"
-test7       = "my old friend who comes from Moscow"
-test8       = "my old friend thinks that the film was exciting"
-test9       = "the film which he saw today was very interesting"
-test0       = "my old friend who comes from Moscow thinks that the film \
-              \which he saw today was very interesting"
-
 -- Miscellaneous utilities: ---------------------------------------------------
 
 instance Show Tree where
-  showsPrec d (Atom s)           = showString s
-  showsPrec d (FAp t (Atom s,_)) = shows (tree t)  .  showChar ' '    .
+  showsPrec d (TreeAtom s)       = showString s
+  showsPrec d (FAp t (TreeAtom s,_)) = shows (tree t)  .  showChar ' '    .
                                    showString s
   showsPrec d (FAp t u)          = shows (tree t)  .
                                    showString " (" .
                                    shows (tree u)  .
                                    showChar ')'
-  showsPrec d (BAp t (Atom s,_)) = shows (tree t)  .
+  showsPrec d (BAp t (TreeAtom s,_)) = shows (tree t)  .
                                    showChar ' '    .
                                    showString s
   showsPrec d (BAp t u)          = shows (tree t)  .
