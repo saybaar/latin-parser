@@ -1,5 +1,7 @@
 module LatinTypes where
 
+import Prelude hiding (Word)
+
 data Word = Noun Number Gender Case
           | Adj  Number Gender Case
           | Verb Person Number Tense Voice Mood
@@ -67,6 +69,7 @@ miscwords   = [("puella", Atom (Noun Sg Fem Nom)), ("puella", Atom (Noun Sg Fem 
                ("bonus", nounMod (Adj Sg Masc Nom))]
                ++ [("bona", x) | x <- bona ]
                ++ [("currit", x) | x <- verb currit ]
+               ++ [("et", x) | x <- conjunction Conj ]
   
 -- Translate web results into word parses (to be displayed), then word
 -- parses into lists of these types
@@ -77,9 +80,15 @@ anyNoun = [ Noun n g c | n <- allNumbers,
                          c <- allCases ] 
 bonaParses = [Adj Sg Fem Nom, Adj Sg Fem Abl, Adj Pl Neut Nom]
 bona = map nounMod bonaParses
+
 allNumbers = enumFrom Sg
 allGenders = enumFrom Masc
 allCases   = enumFrom Nom
+allPersons = enumFrom First
+allTenses  = enumFrom Pres
+allVoices  = enumFrom Act
+allMoods   = enumFrom Ind
+
 nounMod :: Word -> Type
 nounMod word =
   case word of
@@ -91,7 +100,22 @@ verb word =
     Verb p n t v m -> [ O (Atom (Noun n gs Nom)) (Atom (Verb p n t v m)) word |
                           gs <- allGenders ] 
     _         -> error("only verbs can be verbified")
-  
+-- Need an extra type for "puella et..." on its own, that needs another noun to bind to -
+-- just treat this as an adjective? 
+conjunction word =
+    [ O (Atom (Verb p n t1 v m)) (Atom (Verb p n t2 v m)) word |
+                          p <- allPersons,
+                          n <- allNumbers,
+                          t1 <- allTenses,
+                          t2 <- allTenses,
+                          v <- allVoices,
+                          m <- allMoods ] ++
+    [ O (Atom (Noun ns gs1 c)) (Atom (Noun Pl gs2 c)) word |
+                          ns <- allNumbers,
+                          gs1 <- allGenders,
+                          gs2 <- allGenders,
+                          c <- allCases ]
+ 
 {-
 nounModsAll = [ nounMod n g c | n <- allNumbers,
                                 g <- allCases,
