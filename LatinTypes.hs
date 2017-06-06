@@ -2,7 +2,7 @@ module LatinTypes where
 
 data Word = Noun Number Gender Case
           | Adj  Number Gender Case
-          | Verb Person Number Tense Mood Voice
+          | Verb Person Number Tense Voice Mood
           | Part Number Gender Case Tense Voice
           | Conj
           | Prep 
@@ -61,46 +61,20 @@ other wts d = foldr ($) d [ addWord t w | (w,t) <- wts ]
 
 dictionary :: Dictionary
 dictionary = other miscwords $ Nil
-{-
-dictionary  = vocab nouns   T
-            $ vocab itverb  (O T S Conj)
-            $ vocab trverb  (O T (O T S Conj) Conj)
-            $ vocab adj     (O T T Conj)
-            $ vocab adverb  (O (O T S Conj) (O T S Conj) Conj)
-            $ other miscwords
-            $ Nil
--}
-
-nouns       = ["Roman", "hat", "wine", "boy", "girl", "father", "mother",
-                "Boston", "I", "friend", "word", "home", "he", "she", "enemy",
-                "Moscow", "London", "Oregon", "film", "John", "dog", "Mary",
-                "Portland", "city", "cat", "mouse", "Sebastian", "Paul",
-                "Mark", "computer", "weather"]
-itverb      = ["came", "lives", "comes", "saw", "slept", "runs"]
-trverb      = ["knew", "see", "knocked", "thinks", "was", "likes", "loves" ]
-adj         = ["Roman", "the", "my", "his", "her", "old", "ill", "a", "young",
-               "exciting", "interesting", "this", "small", "favorite",
-               "red", "blue", "brown", "yellow", "green",
-               "sunny", "rainy", "windy", "warm" ]
-adverb      = ["home", "late", "early", "soundly", "quickly"]
 
 miscwords   = [("puella", Atom (Noun Sg Fem Nom)), ("puella", Atom (Noun Sg Fem Abl)),
                ("puer", Atom (Noun Sg Masc Nom)), ("data", Atom (Noun Pl Neut Nom)),
-               ("bonus", nounMod (Adj Sg Masc Nom))] ++ [("bona", x) | x <- bona ]
-
-  {-
-               [("that", ost), ("in", otd1), ("tomorrow", oss),
-               ("will", d2), ("down", d2), ("was", oap1),
-               ("very", oaa), ("today", d1), ("who", otop1t),
-               ("from", otd1), ("which", otop1a), ("is", oap1),
-               ("puella", nounf), ("puer", nounm), ("bona", adjf),
-               ("ind", adji), ("bonus", adjm)]
-
-  -}
+               ("bonus", nounMod (Adj Sg Masc Nom))]
+               ++ [("bona", x) | x <- bona ]
+               ++ [("currit", x) | x <- verb currit ]
   
 -- Translate web results into word parses (to be displayed), then word
 -- parses into lists of these types
 
+currit = Verb Third Sg Pres Act Ind
+anyNoun = [ Noun n g c | n <- allNumbers,
+                         g <- allGenders,
+                         c <- allCases ] 
 bonaParses = [Adj Sg Fem Nom, Adj Sg Fem Abl, Adj Pl Neut Nom]
 bona = map nounMod bonaParses
 allNumbers = enumFrom Sg
@@ -111,8 +85,13 @@ nounMod word =
   case word of
     Adj n g c -> O (Atom (Noun n g c)) (Atom (Noun n g c)) word
     _         -> error("only adjectives can modify nouns")
-
   -- e.g. adjectives
+verb word =
+  case word of
+    Verb p n t v m -> [ O (Atom (Noun n gs Nom)) (Atom (Verb p n t v m)) word |
+                          gs <- allGenders ] 
+    _         -> error("only verbs can be verbified")
+  
 {-
 nounModsAll = [ nounMod n g c | n <- allNumbers,
                                 g <- allCases,
