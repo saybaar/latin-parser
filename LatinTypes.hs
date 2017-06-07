@@ -31,6 +31,9 @@ instance Show Type where
 wordTypes  :: TempWord -> [Type]
 wordTypes w = findWord w dictionary
 
+wordTypesNew :: [Word] -> [Type]
+wordTypesNew xs  = foldl (++) [] $ map sentenceFunctions xs
+
 data Dictionary = Nil | Node TempWord [Type] Dictionary Dictionary
 type TempWord       = String
 
@@ -115,7 +118,16 @@ conjunction word =
                           gs1 <- allGenders,
                           gs2 <- allGenders,
                           c <- allCases ]
- 
+
+sentenceFunctions                  :: Word -> [Type]
+sentenceFunctions (Noun n g c)     = [atomNoun n g c]
+sentenceFunctions (Adj n g c)      = [atomNoun n g c] ++
+                                     [nounMod (Adj n g c)]
+sentenceFunctions (Verb p n t v m) = [atomVerb p n t v m] ++
+                                     verb (Verb p n t v m)
+
+atomNoun x y z = Atom (Noun x y z)
+atomVerb p n t v m = Atom (Verb p n t v m)
 {-
 nounModsAll = [ nounMod n g c | n <- allNumbers,
                                 g <- allCases,

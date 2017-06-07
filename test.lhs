@@ -7,12 +7,19 @@
 > import IOActions
 > import LatinTypes
 > import Prelude hiding (Word)
+> import AUG
 
 > main = getLine
->        >>= \x -> return ("http://www.perseus.tufts.edu/hopper/xmlmorph?lang=la&lookup=" ++ x)
->        >>= openURI
->        >>= inIO ((map makeWord) . (map (map getKeyValue)) . getAnalyses . parseEither)
+>        >>= inIO (words) -- [[String]]
+>        --We need to do something resembling sentence here, before we lose the string values. 
+>        >>= mapM (wordParses) -- [[Word]]
+>        >>= mapM (inIO (wordTypesNew)) -- [[Type]] 
 >        >>= mapM_ print
+
+> wordParses  x = return x
+>           >>= \x -> return ("http://www.perseus.tufts.edu/hopper/xmlmorph?lang=la&lookup=" ++ x)
+>           >>= openURI
+>           >>= inIO ((map makeWord) . (map (map getKeyValue)) . getAnalyses . parseEither) 
 
 parseEither :: Either String B.ByteString -> [Content]
 -- something strange going on with ByteString type...
