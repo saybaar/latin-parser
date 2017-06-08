@@ -9,17 +9,46 @@
 > import Prelude hiding (Word)
 > import AUG
 
-> main = getLine
->        >>= inIO (words) -- [[String]]
->        --We need to do something resembling sentence here, before we lose the string values. 
->        >>= mapM (wordParses) -- [[Word]]
->        >>= mapM (inIO (wordTypesNew)) -- [[Type]] 
->        >>= mapM_ print
+type Sentence = [TTree]
+
+sentence :: String -> Sentence
+sentence = map wordToTTree . words
+ where wordToTTree w = (TreeAtom w, wordTypes w)
+
+{-
+
+main = do
+   ss <- (inIO words) . getLine
+   w  <- word -- single string
+   wts <- (inIO wordTypesNew) . wordParses
+   ...
+
+ main = getLine
+        >>= inIO words -- [String]
+        >>= inIO (map (\w-> (TreeAtom w, (wordTypesNew . wordParses)))) -- [TTree]
+        >>= putStr . unlines . map drawTTree . fastTtrees -- the rest of explain, after sentence
+
+-}
+
+WordToTree  :: String -> IO (TTree)
+
+> wordToTree s = do
+>                w <- return s -- String
+>                ps <- wordParses w -- [Word]
+>                ts <- (inIO wordTypesNew) ps -- [Type]
+>                tree <- return (TreeAtom w, ts) -- TTree
+>                return tree
+
+> main = do
+>        l <- getLine -- String
+>        ws <- (inIO words) l
+>        trees <- mapM wordToTree ws
+>        (putStr . unlines . map drawTTree . fastTtrees) trees
 
 > wordParses  x = return x
 >           >>= \x -> return ("http://www.perseus.tufts.edu/hopper/xmlmorph?lang=la&lookup=" ++ x)
 >           >>= openURI
->           >>= inIO ((map makeWord) . (map (map getKeyValue)) . getAnalyses . parseEither) 
+>           >>= inIO ( nub . (map makeWord) . (map (map getKeyValue)) . getAnalyses . parseEither) 
 
 parseEither :: Either String B.ByteString -> [Content]
 -- something strange going on with ByteString type...
