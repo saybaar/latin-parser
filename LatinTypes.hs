@@ -128,24 +128,3 @@ sentenceFunctions (Verb p n t v m) = [atomVerb p n t v m] ++
 
 atomNoun x y z = Atom (Noun x y z)
 atomVerb p n t v m = Atom (Verb p n t v m)
-{-
-nounModsAll = [ nounMod n g c | n <- allNumbers,
-                                g <- allCases,
-                                c <- allGenders ]
--}
--- e.g. genitive nouns
-{-
-oss         = O S S
-ost         = O S T
-a           = O T T
-p1          = O T S
-p2          = O T p1
-p3          = O T p2
-d1          = O p1 p1
-d2          = O p2 p2
-otd1        = O T d1
-oaa         = O a a
-otop1t      = O T (O p1 T)
-oap1        = O a p1
-otop1a      = O T (O p1 a)
--}

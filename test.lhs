@@ -9,49 +9,27 @@
 > import Prelude hiding (Word)
 > import AUG
 
-type Sentence = [TTree]
-
-sentence :: String -> Sentence
-sentence = map wordToTTree . words
- where wordToTTree w = (TreeAtom w, wordTypes w)
-
-{-
-
-main = do
-   ss <- (inIO words) . getLine
-   w  <- word -- single string
-   wts <- (inIO wordTypesNew) . wordParses
-   ...
-
- main = getLine
-        >>= inIO words -- [String]
-        >>= inIO (map (\w-> (TreeAtom w, (wordTypesNew . wordParses)))) -- [TTree]
-        >>= putStr . unlines . map drawTTree . fastTtrees -- the rest of explain, after sentence
-
--}
-
-WordToTree  :: String -> IO (TTree)
-
-> wordToTree s = do
->                w <- return s -- String
->                ps <- wordParses w -- [Word]
->                ts <- (inIO wordTypesNew) ps -- [Type]
->                tree <- return (TreeAtom w, ts) -- TTree
->                return tree
-
 > main = do
->        l <- getLine -- String
->        ws <- (inIO words) l
+>        l     <- getLine -- String
+>        ws    <- (inIO words) l
 >        trees <- mapM wordToTree ws
 >        (putStr . unlines . map drawTTree . fastTtrees) trees
 
+
+> wordToTree  :: String -> IO (TTree)
+> wordToTree s = do         
+>                ps   <- wordParses s            -- [Word]
+>                ts   <- (inIO wordTypesNew) ps  -- [Type]
+>                return (TreeAtom s, ts) -- TTree
+
+> wordParses   :: String -> IO [Word] 
 > wordParses  x = return x
->           >>= \x -> return ("http://www.perseus.tufts.edu/hopper/xmlmorph?lang=la&lookup=" ++ x)
->           >>= openURI
->           >>= inIO ( nub . (map makeWord) . (map (map getKeyValue)) . getAnalyses . parseEither) 
+>                 >>= \x -> return ("http://www.perseus.tufts.edu/hopper/xmlmorph?lang=la&lookup=" ++ x)
+>                 >>= openURI
+>                 >>= inIO ( nub . map makeWord . map (map getKeyValue) . getAnalyses . parseEither) 
 
 parseEither :: Either String B.ByteString -> [Content]
--- something strange going on with ByteString type...
+-- something strange going on with ByteString type...works without the annotation
 
 > parseEither x = case x of
 >                   Left s   -> error ("Error in initial XML parse: " ++ s)
@@ -70,26 +48,36 @@ parseEither :: Either String B.ByteString -> [Content]
 >                                                     [] -> (name,"")
 >                                                     _ -> error "non-text data in element"
 
+finds value of tag in XML object, if it exists:
+
+> findTag :: String -> [(String,String)] -> String
 > findTag s obj = case lookup s obj of
 >                      Just str -> str
->                      Nothing -> error (s ++ " not found in XML")
+>                      Nothing  -> error (s ++ " not found in XML")
+
+finds attribute type matching string in the dictionary: 
+
+> findDef :: String -> [(String, attr)] -> attr
 > findDef s dict = case lookup s dict of
->                      Just a -> a
->                      Nothing -> error (s ++ " not found in dict")
+>                      Just a  -> a
+>                      Nothing -> error (s ++ " not found in attribute dict")
 > findType s obj dict = findDef (findTag s obj) dict
+
 > makeWord :: [(String,String)] -> Word
 > makeWord obj = case findTag "pos" obj of
 >                 "noun" -> Noun number gender gramcase
 >                 "verb" -> Verb person number tense voice mood
 >                 "adj"  -> Adj  number gender gramcase
->                 other -> error (other ++ " not yet supported...")
->     where number = findType "number" obj numberDict
+>                 other  -> error (other ++ " parsing not yet supported...")
+>     where number   = findType "number" obj numberDict
 >           gramcase = findType "case" obj caseDict
->           gender = findType "gender" obj genderDict
->           person = findType "person" obj personDict
->           tense = findType "tense" obj tenseDict
->           voice = findType "voice" obj voiceDict
->           mood = findType "mood" obj moodDict
+>           gender   = findType "gender" obj genderDict
+>           person   = findType "person" obj personDict
+>           tense    = findType "tense" obj tenseDict
+>           voice    = findType "voice" obj voiceDict
+>           mood     = findType "mood" obj moodDict
+
+> type AttrDict a = [(String, a)]
 
 > genderDict = [("masc",Masc),("fem",Fem),("neut",Neut)]
 > numberDict = [("sg",Sg),("pl",Pl)]
