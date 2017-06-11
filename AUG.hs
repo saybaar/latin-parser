@@ -34,10 +34,6 @@ tree (tr, ty)  = tr
 
 type Sentence = [TTree]
 
-sentence :: String -> Sentence
-sentence = map wordToTTree . words
- where wordToTTree w = (TreeAtom w, wordTypes w)
-
 -- Enumerating Types/Trees: ---------------------------------------------------
 
 ttrees       :: Sentence -> [TTree]
@@ -82,9 +78,6 @@ build a (ts:tss) = g (reverse is) ts : is
                         ti   <- i,
                         tt   <- t,
                         r    <- combine ti tt ]
-
-explain         :: String -> IO ()
-explain          = putStr . unlines . map drawTTree . fastTtrees . sentence
 
 -- Drawing trees: -------------------------------------------------------------
 

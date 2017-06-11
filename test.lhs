@@ -66,8 +66,10 @@ finds attribute type matching string in the dictionary:
 > makeWord :: [(String,String)] -> Word
 > makeWord obj = case findTag "pos" obj of
 >                 "noun" -> Noun number gender gramcase
->                 "verb" -> Verb person number tense voice mood
+>                 "verb" -> Verb person number tense voice mood False False False
 >                 "adj"  -> Adj  number gender gramcase
+>                 "conj" -> Conj
+>                 "pron" -> Pron number gender gramcase
 >                 other  -> error (other ++ " parsing not yet supported...")
 >     where number   = findType "number" obj numberDict
 >           gramcase = findType "case" obj caseDict
