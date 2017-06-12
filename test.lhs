@@ -13,14 +13,20 @@
 >        l     <- getLine -- String
 >        ws    <- (inIO words) l
 >        trees <- mapM wordToTree ws
->        (putStr . unlines . map drawTTree . filter treeFilter . fastTtrees) trees
+>        (putStr . unlines . map drawTTree . map treeFilter . fastTtrees) trees
 
+wordToTree uses wordParses to get the list of possible Words a string could represent, then
+calls wordTypesNew to get all the possible Types those words could take (Atom or O x y z)
+and packages them into a TTree. 
 
 > wordToTree  :: String -> IO (TTree)
 > wordToTree s = do         
 >                ps   <- wordParses s            -- [Word]
 >                ts   <- (inIO wordTypesNew) ps  -- [Type]
->                return (TreeAtom s, ts) -- TTree
+>                return (TreeAtom s, ts)         -- TTree
+
+wordParses looks up the given string on Perseus Hopper and parses the XML response into a list of
+Word types. 
 
 > wordParses   :: String -> IO [Word] 
 > wordParses  x = return x
@@ -28,9 +34,15 @@
 >                 >>= openURI
 >                 >>= inIO ( nub . map makeWord . map (map getKeyValue) . getAnalyses . parseEither) 
 
-> treeFilter :: TTree -> Bool
-> treeFilter (a,(O x y z):_) = False
-> treeFilter _       = True
+fastTtrees will return all possible types for a word or phrase, even the O x y z function types - of
+which there are a huge number, especially for nouns. treeFilter limits the output to Atom types, which
+are the "complete" types we want to see. 
+
+> treeFilter :: TTree -> TTree
+> treeFilter (a,ts) = (a, filter atomType ts)
+>   where atomType t = case t of
+>           Atom w ->  True
+>           O x y z -> False
 
 parseEither :: Either String B.ByteString -> [Content]
 -- something strange going on with ByteString type...works without the annotation

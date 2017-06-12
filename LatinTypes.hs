@@ -20,7 +20,7 @@ data Mood   = Ind | Subj | Imperat | Inf                     deriving (Eq, Show,
 data Voice  = Act | Pass                                     deriving (Eq, Show, Enum)
 
 
-data Type   = Atom Word | T | S | O Type Type Word deriving Eq
+data Type   = Atom Word | O Type Type Word deriving Eq
 
 instance Show Type where
   showsPrec d (Atom word)  = showString $ show word
