@@ -92,9 +92,11 @@ verbIObj n g c word =
                       b  <- [True,False] ]
     _ -> []
 conjunction =
-    [ O (Atom (Verb p n t1 v m a b c)) (singletMod (Verb p n t2 v m d e f) Conj) Conj |
-                          p <- allPersons,
-                          n <- allNumbers,
+    [ O (Atom (Verb ps1 ns1 t1 v m a b c)) (singletMod (Verb ps2 ns2 t2 v m d e f) Conj) Conj |
+                          ps1 <- allPersons,
+                          ps2 <- allPersons,
+                          ns1 <- allNumbers,
+                          ns2 <- allNumbers,
                           t1 <- allTenses,
                           t2 <- allTenses,
                           v <- allVoices,

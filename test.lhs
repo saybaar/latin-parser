@@ -13,7 +13,7 @@
 >        l     <- getLine -- String
 >        ws    <- (inIO words) l
 >        trees <- mapM wordToTree ws
->        (putStr . unlines . map drawTTree . fastTtrees) trees
+>        (putStr . unlines . map drawTTree . filter treeFilter . fastTtrees) trees
 
 
 > wordToTree  :: String -> IO (TTree)
@@ -27,6 +27,10 @@
 >                 >>= \x -> return ("http://www.perseus.tufts.edu/hopper/xmlmorph?lang=la&lookup=" ++ x)
 >                 >>= openURI
 >                 >>= inIO ( nub . map makeWord . map (map getKeyValue) . getAnalyses . parseEither) 
+
+> treeFilter :: TTree -> Bool
+> treeFilter (a,(O x y z):_) = False
+> treeFilter _       = True
 
 parseEither :: Either String B.ByteString -> [Content]
 -- something strange going on with ByteString type...works without the annotation
