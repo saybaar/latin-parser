@@ -25,6 +25,7 @@ data Type   = Atom Word | O Type Type Word deriving Eq
 instance Show Type where
   showsPrec d (Atom word)  = showString $ show word
   showsPrec d (O x y word) = showString $ show word
+--  showsPrec d (O x y word) = showString $ show word ++ " { O " ++ show x ++ show y ++ " } "
 
 -- A simple lexicon, sufficient for examples in the paper: --------------------
 

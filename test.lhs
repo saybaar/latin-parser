@@ -13,7 +13,7 @@
 >        l     <- getLine -- String
 >        ws    <- (inIO words) l
 >        trees <- mapM wordToTree ws
->        (putStr . unlines . map drawTTree . map treeFilter . fastTtrees) trees
+>        (putStr . unlines . map drawTTree . filter nonEmptyTree . map treeFilter . fastTtrees) trees
 
 wordToTree uses wordParses to get the list of possible Words a string could represent, then
 calls wordTypesNew to get all the possible Types those words could take (Atom or O x y z)
@@ -44,13 +44,22 @@ are the "complete" types we want to see.
 >           Atom w ->  True
 >           O x y z -> False
 
+> nonEmptyTree :: TTree -> Bool
+> nonEmptyTree (a,t:ts) = True
+> nonEmptyTree (a,[])   = False
+
+-------------------------------------------------------------------------------------------------------
+XML processing
+-------------------------------------------------------------------------------------------------------
+
+processing raw XML into a list of elements corresponding to the set of analyses: 
+
 parseEither :: Either String B.ByteString -> [Content]
--- something strange going on with ByteString type...works without the annotation
+-- something strange going on with ByteString type...it works without the annotation
 
 > parseEither x = case x of
 >                   Left s   -> error ("Error in initial XML parse: " ++ s)
 >                   Right bs -> parseXML bs
-
 > getAnalyses :: [Content] -> [[Element]]
 > getAnalyses es = case findElement (QName "analyses" Nothing Nothing) (head . tail $ onlyElems es) of
 >                   Nothing -> error "analyses not found"
@@ -58,28 +67,30 @@ parseEither :: Either String B.ByteString -> [Content]
 > getContentList :: Element -> [Content]
 > getContentList (Element _ _ c _) = c
 
-> getKeyValue :: Element -> (String,String)
+> type KeyValuePair = (String, String)
+
+turns an XML Element into a more usable list of key-value pairs: 
+
+> getKeyValue :: Element -> KeyValuePair
 > getKeyValue (Element (QName name uri prefix) attrs contents line) = case contents of
 >                                                     (Text (CData kind string line)):others -> (name,string)
 >                                                     [] -> (name,"")
 >                                                     _ -> error "non-text data in element"
 
-finds value of tag in XML object, if it exists:
+finds value of tag in list of key-value pairs:
 
-> findTag :: String -> [(String,String)] -> String
+> findTag :: String -> [KeyValuePair] -> String
 > findTag s obj = case lookup s obj of
 >                      Just str -> str
 >                      Nothing  -> error (s ++ " not found in XML")
 
-finds attribute type matching string in the dictionary: 
-
-> findDef :: String -> [(String, attr)] -> attr
-> findDef s dict = case lookup s dict of
+> findType :: String -> [KeyValuePair] -> AttrDict attr -> attr
+> findType s obj dict = findDef (findTag s obj) dict
+>   where findDef s dict = case lookup s dict of
 >                      Just a  -> a
 >                      Nothing -> error (s ++ " not found in attribute dict")
-> findType s obj dict = findDef (findTag s obj) dict
 
-> makeWord :: [(String,String)] -> Word
+> makeWord :: [KeyValuePair] -> Word
 > makeWord obj = case findTag "pos" obj of
 >                 "noun" -> Noun number gender gramcase
 >                 "verb" -> Verb person number tense voice mood False False False
