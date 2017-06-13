@@ -25,19 +25,11 @@ data Type   = Atom Word | O Type Type Word deriving Eq
 instance Show Type where
   showsPrec d (Atom word)  = showString $ show word
   showsPrec d (O x y word) = showString $ show word
+--  for debugging: 
 --  showsPrec d (O x y word) = showString $ show word ++ " { O " ++ show x ++ show y ++ " } "
-
--- A simple lexicon, sufficient for examples in the paper: --------------------
 
 wordTypesNew :: [Word] -> [Type]
 wordTypesNew xs  = foldl (++) [] $ map sentenceFunctions xs
-
-currit = Verb Third Sg Pres Act Ind
-anyNoun = [ Noun n g c | n <- allNumbers,
-                         g <- allGenders,
-                         c <- allCases ] 
-bonaParses = [Adj Sg Fem Nom, Adj Sg Fem Abl, Adj Pl Neut Nom]
-bona = map nounMod bonaParses
 
 allNumbers = enumFrom Sg
 allGenders = enumFrom Masc
@@ -47,6 +39,9 @@ allTenses  = enumFrom Fut
 allVoices  = enumFrom Act
 allMoods   = enumFrom Ind
 
+anyNoun = [ Noun n g c | n <- allNumbers,
+                         g <- allGenders,
+                         c <- allCases ] 
 nounMod :: Word -> [Type]
 nounMod word =
   case word of
@@ -93,21 +88,22 @@ verbIObj n g c word =
                       b  <- [True,False] ]
     _ -> []
 conjunction =
-    [ O (Atom (Verb ps1 ns1 t1 v m a b c)) (singletMod (Verb ps2 ns2 t2 v m d e f) Conj) Conj |
+{-    [ O (Atom (Verb ps1 ns1 t1 v1 m a b c)) (singletMod (Verb ps2 ns2 t2 v2 m d e f) Conj) Conj |
                           ps1 <- allPersons,
                           ps2 <- allPersons,
                           ns1 <- allNumbers,
                           ns2 <- allNumbers,
                           t1 <- allTenses,
                           t2 <- allTenses,
-                          v <- allVoices,
+                          v1 <- allVoices,
+                          v2 <- allVoices,
                           m <- allMoods,
                           a <- [True,False],
                           b <- [True,False],
                           c <- [True,False],
                           d <- [True,False],
                           e <- [True,False],
-                          f <- [True,False] ] ++
+                          f <- [True,False] ] ++ -}
     [ O (Atom (Noun ns1 gs1 c)) (modFrom (Noun ns2 gs2 c) (Noun Pl gs2 c) Conj) Conj |
                           ns1 <- allNumbers,
                           ns2 <- allNumbers,
